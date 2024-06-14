@@ -8,10 +8,10 @@ Adafruit_INA219 ina219;
 #define sensorPin A1
 #define resV1 A2
 #define resV2 A3
-#define button 2
+#define button 12
 
 const float calibrationFactor = 0.1;
-const int resistor_value = 10000;
+const int resistor_value = 22;
 unsigned int state = 0;
 float current = 0;
 
@@ -25,7 +25,7 @@ void setup() {
     ina219.begin();
 
     lcd.backlight();
-    Serial.begin(9600);
+    Serial.begin(115200);
     lcd.print("Digital Ammeter");
     delay(2000);
     lcd.clear();
@@ -34,6 +34,7 @@ void setup() {
 void loop() {
 
     button_click();
+    Serial.println(state);
 
     if (state == 0){
         // resistor 
@@ -50,22 +51,33 @@ void loop() {
         current = i2c_sensor();
         display_current(current);
     }
-
+    delay(1000);
 }
 
 
 void button_click() {
-    if (button && (state < 2 )) {
-        state++;
-    }
-    else {
-        state = 0;
+    int button_in = digitalRead(button);
+    Serial.print("Button : "); Serial.println(button_in);
+    if (button_in) {
+        if (state >= 2 ){
+            state = 0;
+        }
+        else {
+            state++;
+        }
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("Mode");
+        lcd.setCursor(5, 0);
+        lcd.print(state);
+        delay(1000);
+        lcd.clear();
     }
 }
 
 
 void display_current(float current_value) {
-    char currentStr[10];
+    char currentStr[8];
     dtostrf(current_value, 6, 2, currentStr);
     Serial.print("Output Current: ");
     Serial.println(currentStr);
@@ -105,13 +117,13 @@ float i2c_sensor() {
     Serial.print("Current: "); Serial.print(current_mA); Serial.println(" mA");
     Serial.println("");
 
-    return current_mA*1000;
+    return current_mA/1000;
 }
 
 float resistor() {
     float current = 0;
-    int v1 = (analogRead(resV1)*5)/1024;
-    int v2 = (analogRead(resV2)*5)/1024;
+    float v1 = (analogRead(resV1)/1024)*5;
+    float v2 = (analogRead(resV2)/1024)*5;
     current = (v1 - v2)/resistor_value;
     Serial.print("Current : ");
     Serial.println(current);
