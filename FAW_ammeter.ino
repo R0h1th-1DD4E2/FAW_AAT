@@ -11,8 +11,7 @@ Adafruit_INA219 ina219;
 #define button 12
 
 const float calibrationFactor = 0.1;
-const int resistor_value = 22;
-unsigned int state = 0;
+unsigned int state = 1;
 float current = 0;
 
 void setup() {
@@ -36,17 +35,12 @@ void loop() {
     button_click();
     Serial.println(state);
 
-    if (state == 0){
-        // resistor 
-        current = resistor();
-        display_current(current);
-    }
-    else if(state == 1) {
+    if(state == 0) {
         // Hall Effect Sensor (ACS712)
         current = hall_sensor();
         display_current(current);
     }
-    else if(state == 2) {
+    else if(state == 1) {
         // INA219
         current = i2c_sensor();
         display_current(current);
@@ -59,7 +53,7 @@ void button_click() {
     int button_in = digitalRead(button);
     Serial.print("Button : "); Serial.println(button_in);
     if (button_in) {
-        if (state >= 2 ){
+        if (state >= 1 ){
             state = 0;
         }
         else {
@@ -70,6 +64,10 @@ void button_click() {
         lcd.print("Mode");
         lcd.setCursor(5, 0);
         lcd.print(state);
+        lcd.setCursor(0, 1);
+        lcd.print("Sensor:");
+        lcd.setCursor(9, 1);
+        lcd.print(state ? "I2C" : "Hall");
         delay(1000);
         lcd.clear();
     }
@@ -118,16 +116,4 @@ float i2c_sensor() {
     Serial.println("");
 
     return current_mA/1000;
-}
-
-float resistor() {
-    float current = 0;
-    float v1 = (analogRead(resV1)/1024)*5;
-    float v2 = (analogRead(resV2)/1024)*5;
-    current = (v1 - v2)/resistor_value;
-    Serial.print("Current : ");
-    Serial.println(current);
-    Serial.print("Voltage Across Resistor: ");
-    Serial.println(v1 - v2);
-    return current;
 }
